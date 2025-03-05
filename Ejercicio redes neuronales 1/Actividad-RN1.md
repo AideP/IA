@@ -1,5 +1,13 @@
 
-### **Modelado de una Red Neuronal para "5 en Línea" en un Tablero 20x20**
+### **Modelado de una Red Neuronal para 5 en Línea sin gravedad en un Tablero 20x20**
+
+### **-Definir el tipo de red neuronal y describir cada una de sus partes.**
+### **-Definir los patrones a utilizar.**
+### **-Definir función de activación es necesaria para este problema.**
+### **-Definir el número máximo de entradas.**
+### **-¿Qué valores a la salida de la red se podrían esperar?**
+### **-¿Cuáles son los valores máximos que puede tener el bias?**
+
 
 #### **1. Tipo de Red Neuronal y sus Partes**
 Para este problema, se recomienda una **red neuronal profunda (Deep Neural Network - DNN)** o una **Red Neuronal Convolucional (CNN)** si se busca mejorar la interpretación espacial del tablero.  
