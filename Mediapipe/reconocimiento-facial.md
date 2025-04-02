@@ -1,13 +1,13 @@
-### **Reconocimiento de puntos faciales utilizando Mediapipe**
+# **Reconocimiento de puntos faciales utilizando Mediapipe**
 
 utilizamos el modelo base dado por el profesor para encontrar los puntos faciales de dos personas diferentes, para esto utilizamos el 
 siguiente código:
-
+```
 import cv2
 import mediapipe as mp
 import numpy as np
 
-# Inicializar MediaPipe Face Mesh
+### Inicializar MediaPipe Face Mesh
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=2, 
                                   min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -53,7 +53,7 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
-
+```
 
 De primer momento intalamos mediapipe a traves del comando:
-# pip install opencv-python mediapipe
+### pip install opencv-python mediapipe
