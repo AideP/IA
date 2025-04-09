@@ -18,11 +18,10 @@ NARANJA = (255, 165, 0)
 PURPURA = (128, 0, 128)
 AZUL = (0, 0, 255)
 CAMINO_OPTIMO = (0, 255, 0)  
-CAMINO_POSSIBLE = (173, 216, 230)  
 
 # Inicializar fuente de Pygame para el texto
 pygame.font.init()
-FUENTE = pygame.font.SysFont("Arial", 15)
+FUENTE = pygame.font.SysFont("Arial", 22)
 
 # Función para convertir un número a un identificador de letras como Excel (a, b, ..., z, aa, ab, ...)
 def convertir_a_letras(n):
@@ -191,12 +190,16 @@ def crear_grid(filas, ancho):
             id += 1  # Incrementar el ID para el siguiente nodo
     return grid
 
-def dibujar_grid(ventana, filas, ancho):
+def dibujar_grid(ventana, filas, ancho, grid):
     ancho_nodo = ancho // filas
     for i in range(filas):
         pygame.draw.line(ventana, GRIS, (0, i * ancho_nodo), (ancho, i * ancho_nodo))
         for j in range(filas):
             pygame.draw.line(ventana, GRIS, (j * ancho_nodo, 0), (j * ancho_nodo, ancho))
+            # Mostrar el ID en cada celda
+            nodo = grid[i][j]
+            texto = nodo.get_id()
+            ventana.blit(FUENTE.render(texto, True, NEGRO), (nodo.x + 5, nodo.y + 5))
 
 def dibujar(ventana, grid, filas, ancho):
     ventana.fill(BLANCO)
@@ -204,7 +207,7 @@ def dibujar(ventana, grid, filas, ancho):
         for nodo in fila:
             nodo.dibujar(ventana)
 
-    dibujar_grid(ventana, filas, ancho)
+    dibujar_grid(ventana, filas, ancho, grid)
     pygame.display.update()
 
 def obtener_click_pos(pos, filas, ancho):
@@ -214,10 +217,9 @@ def obtener_click_pos(pos, filas, ancho):
     col = x // ancho_nodo
     return fila, col
 
-def main(ventana, ancho):
+def main():
     FILAS = 9
-    grid = crear_grid(FILAS, ancho)
-
+    grid = crear_grid(FILAS, ANCHO_VENTANA)
     inicio = None
     fin = None
 
@@ -241,6 +243,10 @@ def main(ventana, ancho):
     lista_camino_tk = tk.Listbox(ventana_tk, font=("Arial", 10), fg="green")
     lista_camino_tk.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
+    # Ventana de Pygame
+    VENTANA = pygame.display.set_mode((ANCHO_VENTANA, ANCHO_VENTANA))
+    pygame.display.set_caption("Algoritmo A*")
+
     for fila in grid:
         for nodo in fila:
             nodo.actualizar_vecinos(grid)
@@ -248,14 +254,14 @@ def main(ventana, ancho):
     corriendo = True
 
     while corriendo:
-        dibujar(ventana, grid, FILAS, ancho)
+        dibujar(VENTANA, grid, FILAS, ANCHO_VENTANA)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 corriendo = False
 
             if pygame.mouse.get_pressed()[0]:  # Click izquierdo
                 pos = pygame.mouse.get_pos()
-                fila, col = obtener_click_pos(pos, FILAS, ancho)
+                fila, col = obtener_click_pos(pos, FILAS, ANCHO_VENTANA)
                 nodo = grid[fila][col]
                 if not inicio and nodo != fin:
                     inicio = nodo
@@ -270,7 +276,7 @@ def main(ventana, ancho):
 
             elif pygame.mouse.get_pressed()[2]:  # Click derecho
                 pos = pygame.mouse.get_pos()
-                fila, col = obtener_click_pos(pos, FILAS, ancho)
+                fila, col = obtener_click_pos(pos, FILAS, ANCHO_VENTANA)
                 nodo = grid[fila][col]
                 nodo.restablecer()
                 if nodo == inicio:
@@ -284,11 +290,11 @@ def main(ventana, ancho):
                         for nodo in fila:
                             nodo.actualizar_vecinos(grid)
 
-                    a_star(lambda: dibujar(ventana, grid, FILAS, ancho), grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk)
+                    a_star(lambda: dibujar(VENTANA, grid, FILAS, ANCHO_VENTANA), grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk)
 
         ventana_tk.update()  # Actualizar la ventana de Tkinter en el bucle principal
 
     pygame.quit()
     ventana_tk.destroy()
 
-main(VENTANA, ANCHO_VENTANA)
+main()
