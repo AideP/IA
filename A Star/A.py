@@ -11,12 +11,14 @@ pygame.display.set_caption("Algoritmo A*")
 # Colores (RGB)
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
-GRIS = (128, 128, 128)
+GRIS = (169, 169, 169)
 VERDE = (0, 255, 0)
 ROJO = (255, 0, 0)
 NARANJA = (255, 165, 0)
 PURPURA = (128, 0, 128)
 AZUL = (0, 0, 255)
+CAMINO_OPTIMO = (0, 255, 0)  
+CAMINO_POSSIBLE = (173, 216, 230)  
 
 # Inicializar fuente de Pygame para el texto
 pygame.font.init()
@@ -105,33 +107,32 @@ def heuristica(nodo1, nodo2):
 def reconstruir_camino(came_from, actual, dibujar, lista_camino_tk):
     while actual in came_from:
         actual = came_from[actual]
-        actual.color = VERDE  # Color del camino óptimo en verde
+        actual.color = CAMINO_OPTIMO  # Camino óptimo en un color más agradable
         dibujar()
         
         # Mostrar los datos del camino óptimo en la lista de Tkinter
-        texto = f"ID: {actual.get_id()} | g: {int(actual.g)}, h: {int(actual.h)}, f: {int(actual.f)}"
+        texto = f"ID: {actual.get_id()} | G: {int(actual.g)} | H: {int(actual.h)} | F: {int(actual.f)}"
         lista_camino_tk.insert(tk.END, texto)
         lista_camino_tk.itemconfig(tk.END, {'fg': 'green'})  # Colorear el texto en verde
         lista_camino_tk.yview(tk.END)  # Desplazar hacia abajo para mostrar el último nodo
 
 # Mostrar los valores g, h, f y el ID en una ventana independiente usando Tkinter en tiempo real
-def mostrar_valores_en_tkinter(lista, nodo):
-    texto = f"ID: {nodo.get_id()} | g: {int(nodo.g)}, h: {int(nodo.h)}, f: {int(nodo.f)}"
-    lista.insert(tk.END, texto)
+def mostrar_valores_en_tkinter(lista, nodo, tipo_lista):
+    texto = f"ID: {nodo.get_id()} | G: {int(nodo.g)} | H: {int(nodo.h)} | F: {int(nodo.f)}"
+    lista.insert(tk.END, f"{tipo_lista}: {texto}")
     lista.yview(tk.END)  # Desplazarse automáticamente hacia abajo para ver el último nodo agregado
     lista.update_idletasks()  # Actualizar la lista en tiempo real
 
 # Algoritmo A*
-def a_star(dibujar, grid, inicio, fin, lista_tk, lista_camino_tk):
+def a_star(dibujar, grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk):
     cont = 0
     open_set = PriorityQueue()
     open_set.put((0, cont, inicio))
     came_from = {}
+    open_set_hash = {inicio}
 
     inicio.g = 0
     inicio.f = heuristica(inicio, fin)
-
-    open_set_hash = {inicio}
 
     while not open_set.empty():
         for event in pygame.event.get():
@@ -142,7 +143,7 @@ def a_star(dibujar, grid, inicio, fin, lista_tk, lista_camino_tk):
         open_set_hash.remove(actual)
 
         # Mostrar en tiempo real los valores del nodo actual en la ventana de Tkinter
-        mostrar_valores_en_tkinter(lista_tk, actual)
+        mostrar_valores_en_tkinter(lista_abierta_tk, actual, "Lista Abierta")
 
         if actual == fin:
             reconstruir_camino(came_from, fin, dibujar, lista_camino_tk)
@@ -165,6 +166,9 @@ def a_star(dibujar, grid, inicio, fin, lista_tk, lista_camino_tk):
                     # Solo cambiar a rojo si no es el nodo de fin
                     if vecino != fin:
                         vecino.color = ROJO
+
+        # Mostrar los valores de la lista cerrada
+        mostrar_valores_en_tkinter(lista_cerrada_tk, actual, "Lista Cerrada")
 
         dibujar()
 
@@ -225,10 +229,14 @@ def main(ventana, ancho):
     # Lista para nodos explorados
     scrollbar = tk.Scrollbar(ventana_tk)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    lista_tk = tk.Listbox(ventana_tk, yscrollcommand=scrollbar.set, font=("Arial", 10))
-    lista_tk.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    scrollbar.config(command=lista_tk.yview)
+    lista_abierta_tk = tk.Listbox(ventana_tk, yscrollcommand=scrollbar.set, font=("Arial", 10))
+    lista_abierta_tk.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    scrollbar.config(command=lista_abierta_tk.yview)
 
+    # Lista para nodos cerrados
+    lista_cerrada_tk = tk.Listbox(ventana_tk, yscrollcommand=scrollbar.set, font=("Arial", 10))
+    lista_cerrada_tk.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    
     # Lista para el camino óptimo
     lista_camino_tk = tk.Listbox(ventana_tk, font=("Arial", 10), fg="green")
     lista_camino_tk.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
@@ -276,7 +284,7 @@ def main(ventana, ancho):
                         for nodo in fila:
                             nodo.actualizar_vecinos(grid)
 
-                    a_star(lambda: dibujar(ventana, grid, FILAS, ancho), grid, inicio, fin, lista_tk, lista_camino_tk)
+                    a_star(lambda: dibujar(ventana, grid, FILAS, ancho), grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk)
 
         ventana_tk.update()  # Actualizar la ventana de Tkinter en el bucle principal
 
