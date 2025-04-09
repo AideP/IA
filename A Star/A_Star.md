@@ -37,13 +37,10 @@ Para encontrar el camino mas corto el algoritmo utiliza funciones de evaluación
 El profesor también nos proporciono el siguiente código cascarón para comenzar la creación del algoritmo A*:
 ´´´
 import pygame
-
-# Configuraciones iniciales
 ANCHO_VENTANA = 800
 VENTANA = pygame.display.set_mode((ANCHO_VENTANA, ANCHO_VENTANA))
 pygame.display.set_caption("Visualización de Nodos")
 
-# Colores (RGB)
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 GRIS = (128, 128, 128)
@@ -163,6 +160,5 @@ def main(ventana, ancho):
                     fin = None
 
     pygame.quit()
-
 main(VENTANA, ANCHO_VENTANA)
 ´´´
