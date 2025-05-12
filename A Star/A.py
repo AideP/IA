@@ -1,213 +1,146 @@
+# visualizador_a_estrella.py
+
 import pygame
+import heapq
 import tkinter as tk
-from queue import PriorityQueue
-import math
+from tkinter import Frame, Text, Scrollbar, VERTICAL, RIGHT, LEFT, Y, BOTH
+import string
 
-# Configuraciones iniciales
-ANCHO_VENTANA = 800
-VENTANA = pygame.display.set_mode((ANCHO_VENTANA, ANCHO_VENTANA))
-pygame.display.set_caption("Algoritmo A*")
-
-# Colores (RGB)
+# ----- Colores -----
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
-GRIS = (169, 169, 169)
+GRIS = (128, 128, 128)
 VERDE = (0, 255, 0)
 ROJO = (255, 0, 0)
 NARANJA = (255, 165, 0)
 PURPURA = (128, 0, 128)
 AZUL = (0, 0, 255)
-CAMINO_OPTIMO = (0, 255, 0)  
 
-# Inicializar fuente de Pygame para el texto
-pygame.font.init()
-FUENTE = pygame.font.SysFont("Arial", 22)
+# ----- Generar IDs como en Excel -----
+def generar_ids_excel(filas, columnas):
+    letras = list(string.ascii_lowercase)
+    ids = []
+    for i in range(filas * columnas):
+        if i < 26:
+            ids.append(letras[i])
+        else:
+            ids.append(letras[(i // 26) - 1] + letras[i % 26])
+    return ids
 
-# Función para convertir un número a un identificador de letras como Excel (a, b, ..., z, aa, ab, ...)
-def convertir_a_letras(n):
-    resultado = ""
-    while n >= 0:
-        resultado = chr(n % 26 + 97) + resultado
-        n = n // 26 - 1
-    return resultado
 
 class Nodo:
-    def __init__(self, fila, col, ancho, total_filas, id):
+    def __init__(self, fila, col, ancho, total_filas, id_excel):
         self.fila = fila
         self.col = col
+        self.id_excel = id_excel
         self.x = fila * ancho
         self.y = col * ancho
         self.color = BLANCO
         self.ancho = ancho
         self.total_filas = total_filas
-        self.vecinos = []
-        self.g = float("inf")  # Distancia desde el inicio
-        self.h = 0  # Heurística (distancia hasta el fin)
-        self.f = float("inf")  # f = g + h
-        self.padre = None  # Nodo anterior para reconstruir el camino
-        self.id = id  # Identificador único del nodo
+        self.g = float("inf")
+        self.h = 0
+        self.padre = None
 
-    def get_id(self):
-        return self.id
+    def __lt__(self, otro):
+        return (self.g + self.h) < (otro.g + otro.h)
 
-    def es_pared(self):
-        return self.color == NEGRO
+    def get_pos(self):
+        return self.fila, self.col
 
-    def es_inicio(self):
-        return self.color == NARANJA
+    # Verificar tipo de nodo
+    def es_pared(self): return self.color == NEGRO
+    def es_inicio(self): return self.color == NARANJA
+    def es_fin(self): return self.color == PURPURA
 
-    def es_fin(self):
-        return self.color == PURPURA
+    # Establecer el tipo de nodo
+    def restablecer(self): self.color = BLANCO
+    def hacer_inicio(self): self.color = NARANJA
+    def hacer_pared(self): self.color = NEGRO
+    def hacer_fin(self): self.color = PURPURA
 
-    def restablecer(self):
-        self.color = BLANCO
+    def hacer_camino(self):
+        if not self.es_fin() and not self.es_inicio():
+            self.color = VERDE
 
-    def hacer_inicio(self):
-        self.color = NARANJA
-
-    def hacer_pared(self):
-        self.color = NEGRO
-
-    def hacer_fin(self):
-        self.color = PURPURA
-
-    def hacer_fin_encontrado(self):
-        self.color = AZUL  # Cambia el color a azul cuando se encuentra el camino
-
-    def dibujar(self, ventana):
+    def dibujar(self, ventana, fuente):
         pygame.draw.rect(ventana, self.color, (self.x, self.y, self.ancho, self.ancho))
+        texto = fuente.render(self.id_excel, True, NEGRO)
+        ventana.blit(texto, (self.x + 5, self.y + 5))
 
-    def actualizar_vecinos(self, grid):
-        # Limpiar vecinos anteriores
-        self.vecinos = []
-        # Direcciones de movimiento en 8 direcciones (arriba, abajo, izquierda, derecha y diagonales)
-        direcciones = [
-            (1, 0), (-1, 0), (0, 1), (0, -1),  # Movimiento en línea recta
-            (1, 1), (1, -1), (-1, 1), (-1, -1)  # Movimiento diagonal
-        ]
-        for dx, dy in direcciones:
-            nuevo_fila = self.fila + dx
-            nuevo_col = self.col + dy
-            if 0 <= nuevo_fila < self.total_filas and 0 <= nuevo_col < self.total_filas:
-                vecino = grid[nuevo_fila][nuevo_col]
-                if not vecino.es_pared():
-                    self.vecinos.append(vecino)
+# ----- Ventana Informativa -----
+class VentanaInformacion:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Valores del Camino Óptimo")
+        self.root.geometry("400x700")
 
-    def __lt__(self, other):
-        return self.f < other.f
+        self.label_abierta = tk.Label(self.root, text="Lista Abierta", font=("Arial", 12, "bold"))
+        self.label_abierta.pack()
+        self.lista_abierta = tk.Listbox(self.root, font=("Consolas", 10), height=10)
+        self.lista_abierta.pack(fill=tk.BOTH, expand=True)
 
-# Función heurística para A* (distancia de Chebyshev para movimiento diagonal)
-def heuristica(nodo1, nodo2):
-    x1, y1 = nodo1.fila, nodo1.col
-    x2, y2 = nodo2.fila, nodo2.col
-    return max(abs(x1 - x2), abs(y1 - y2))
+        self.label_cerrada = tk.Label(self.root, text="Lista Cerrada", font=("Arial", 12, "bold"))
+        self.label_cerrada.pack()
+        self.lista_cerrada = tk.Listbox(self.root, font=("Consolas", 10), height=10)
+        self.lista_cerrada.pack(fill=tk.BOTH, expand=True)
 
-# Función para reconstruir el camino y colorearlo
-def reconstruir_camino(came_from, actual, dibujar, lista_camino_tk):
-    while actual in came_from:
-        actual = came_from[actual]
-        actual.color = CAMINO_OPTIMO  # Camino óptimo en un color más agradable
-        dibujar()
-        
-        # Mostrar los datos del camino óptimo en la lista de Tkinter
-        texto = f"ID: {actual.get_id()} | G: {int(actual.g)} | H: {int(actual.h)} | F: {int(actual.f)}"
-        lista_camino_tk.insert(tk.END, texto)
-        lista_camino_tk.itemconfig(tk.END, {'fg': 'green'})  # Colorear el texto en verde
-        lista_camino_tk.yview(tk.END)  # Desplazar hacia abajo para mostrar el último nodo
+        self.label_camino = tk.Label(self.root, text="Camino Óptimo", font=("Arial", 12, "bold"))
+        self.label_camino.pack()
+        self.lista_camino = tk.Listbox(self.root, font=("Consolas", 10), fg="green", height=10)
+        self.lista_camino.pack(fill=tk.BOTH, expand=True)
 
-# Mostrar los valores g, h, f y el ID en una ventana independiente usando Tkinter en tiempo real
-def mostrar_valores_en_tkinter(lista, nodo, tipo_lista):
-    texto = f"ID: {nodo.get_id()} | G: {int(nodo.g)} | H: {int(nodo.h)} | F: {int(nodo.f)}"
-    lista.insert(tk.END, f"{tipo_lista}: {texto}")
-    lista.yview(tk.END)  # Desplazarse automáticamente hacia abajo para ver el último nodo agregado
-    lista.update_idletasks()  # Actualizar la lista en tiempo real
+    def actualizar(self, abiertos, cerrados, camino):
+        # Lista abierta
+        self.lista_abierta.delete(0, tk.END)
+        for nodo in abiertos:
+            texto = f"ID: {nodo.id_excel} | G: {int(nodo.g)} | H: {int(nodo.h)} | F: {int(nodo.g + nodo.h)}"
+            self.lista_abierta.insert(tk.END, texto)
 
-# Algoritmo A*
-def a_star(dibujar, grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk):
-    cont = 0
-    open_set = PriorityQueue()
-    open_set.put((0, cont, inicio))
-    came_from = {}
-    open_set_hash = {inicio}
+        # Lista cerrada
+        self.lista_cerrada.delete(0, tk.END)
+        for nodo in cerrados:
+            texto = f"ID: {nodo.id_excel} | G: {int(nodo.g)} | H: {int(nodo.h)} | F: {int(nodo.g + nodo.h)}"
+            self.lista_cerrada.insert(tk.END, texto)
 
-    inicio.g = 0
-    inicio.f = heuristica(inicio, fin)
+        # Camino óptimo
+        self.lista_camino.delete(0, tk.END)
+        for nodo in camino:
+            texto = f"ID: {nodo.id_excel} | G: {int(nodo.g)} | H: {int(nodo.h)} | F: {int(nodo.g + nodo.h)}"
+            self.lista_camino.insert(tk.END, texto)
 
-    while not open_set.empty():
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+        self.root.update()
 
-        actual = open_set.get()[2]
-        open_set_hash.remove(actual)
+# ----- Configuración de la ventana Pygame -----
+ANCHO_VENTANA = 800
+VENTANA = pygame.display.set_mode((ANCHO_VENTANA, ANCHO_VENTANA))
+pygame.display.set_caption("Visualización de A*")
 
-        # Mostrar en tiempo real los valores del nodo actual en la ventana de Tkinter
-        mostrar_valores_en_tkinter(lista_abierta_tk, actual, "Lista Abierta")
-
-        if actual == fin:
-            reconstruir_camino(came_from, fin, dibujar, lista_camino_tk)
-            fin.hacer_fin_encontrado()  # Cambia el color del nodo de fin a azul
-            return True
-
-        for vecino in actual.vecinos:
-            # Costo de movimiento diagonal o recto
-            temp_g_score = actual.g + (1 if abs(vecino.fila - actual.fila) + abs(vecino.col - actual.col) == 1 else math.sqrt(2))
-
-            if temp_g_score < vecino.g:
-                came_from[vecino] = actual
-                vecino.g = temp_g_score
-                vecino.h = heuristica(vecino, fin)
-                vecino.f = vecino.g + vecino.h
-                if vecino not in open_set_hash:
-                    cont += 1
-                    open_set.put((vecino.f, cont, vecino))
-                    open_set_hash.add(vecino)
-                    # Solo cambiar a rojo si no es el nodo de fin
-                    if vecino != fin:
-                        vecino.color = ROJO
-
-        # Mostrar los valores de la lista cerrada
-        mostrar_valores_en_tkinter(lista_cerrada_tk, actual, "Lista Cerrada")
-
-        dibujar()
-
-        if actual != inicio and actual != fin:
-            actual.color = GRIS
-
-    return False
-
-# Crear la cuadrícula y asignar identificadores en formato de letras
+# ----- Funciones de visualización -----
 def crear_grid(filas, ancho):
     grid = []
+    ids = generar_ids_excel(filas, filas)
     ancho_nodo = ancho // filas
-    id = 0  # Inicializar el ID en 0 para usar convertir_a_letras
     for i in range(filas):
         grid.append([])
         for j in range(filas):
-            nodo_id = convertir_a_letras(id)
-            nodo = Nodo(i, j, ancho_nodo, filas, nodo_id)
+            nodo = Nodo(i, j, ancho_nodo, filas, ids[i * filas + j])
             grid[i].append(nodo)
-            id += 1  # Incrementar el ID para el siguiente nodo
     return grid
 
-def dibujar_grid(ventana, filas, ancho, grid):
+def dibujar_grid(ventana, filas, ancho):
     ancho_nodo = ancho // filas
     for i in range(filas):
         pygame.draw.line(ventana, GRIS, (0, i * ancho_nodo), (ancho, i * ancho_nodo))
         for j in range(filas):
             pygame.draw.line(ventana, GRIS, (j * ancho_nodo, 0), (j * ancho_nodo, ancho))
-            # Mostrar el ID en cada celda
-            nodo = grid[i][j]
-            texto = nodo.get_id()
-            ventana.blit(FUENTE.render(texto, True, NEGRO), (nodo.x + 5, nodo.y + 5))
 
-def dibujar(ventana, grid, filas, ancho):
+def dibujar(ventana, grid, filas, ancho, fuente):
     ventana.fill(BLANCO)
     for fila in grid:
         for nodo in fila:
-            nodo.dibujar(ventana)
-
-    dibujar_grid(ventana, filas, ancho, grid)
+            nodo.dibujar(ventana, fuente)
+    dibujar_grid(ventana, filas, ancho)
     pygame.display.update()
 
 def obtener_click_pos(pos, filas, ancho):
@@ -217,66 +150,104 @@ def obtener_click_pos(pos, filas, ancho):
     col = x // ancho_nodo
     return fila, col
 
-def main():
+def heuristica(nodo1, nodo2):
+    x1, y1 = nodo1.get_pos()
+    x2, y2 = nodo2.get_pos()
+    return (abs(x1 - x2) + abs(y1 - y2)) * 10
+
+def reconstruir_camino(nodo_final):
+    actual = nodo_final.padre
+    camino = []
+    while actual and actual.padre:
+        actual.hacer_camino()
+        camino.append(actual)
+        actual = actual.padre
+    camino.reverse()
+    return camino
+
+def a_estrella(grid, inicio, fin, ventana, filas, ancho, fuente, ventana_info):
+    direcciones = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+    open_set = []
+    heapq.heappush(open_set, (0, inicio))
+    inicio.g = 0
+    inicio.h = heuristica(inicio, fin)
+    lista_cerrada = set()
+    abiertos = []
+    cerrados = []
+
+    while open_set:
+        _, nodo_actual = heapq.heappop(open_set)
+        if nodo_actual in lista_cerrada:
+            continue
+
+        lista_cerrada.add(nodo_actual)
+        cerrados.append(nodo_actual)
+
+        if nodo_actual == fin:
+            camino = reconstruir_camino(fin)
+            ventana_info.actualizar(abiertos, cerrados, camino)
+            return
+
+        for dx, dy in direcciones:
+            fila, col = nodo_actual.fila + dx, nodo_actual.col + dy
+            if 0 <= fila < filas and 0 <= col < filas:
+                vecino = grid[fila][col]
+                if vecino.es_pared() or vecino in lista_cerrada:
+                    continue
+
+                nuevo_g = nodo_actual.g + (14 if dx != 0 and dy != 0 else 10)
+
+                if nuevo_g < vecino.g:
+                    vecino.g = nuevo_g
+                    vecino.h = heuristica(vecino, fin)
+                    vecino.padre = nodo_actual
+                    heapq.heappush(open_set, (vecino.g + vecino.h, vecino))
+                    if vecino != inicio and vecino != fin:
+                        vecino.color = AZUL
+                        abiertos.append(vecino)
+
+        dibujar(ventana, grid, filas, ancho, fuente)
+
+        for nodo in lista_cerrada:
+            if nodo != inicio and nodo != fin:
+                nodo.color = ROJO
+
+        ventana_info.actualizar(abiertos, cerrados, [])
+
+# ----- Programa Principal -----
+def main(ventana, ancho):
+    pygame.font.init()
+    fuente = pygame.font.Font(None, 18)
     FILAS = 9
-    grid = crear_grid(FILAS, ANCHO_VENTANA)
+    grid = crear_grid(FILAS, ancho)
     inicio = None
     fin = None
-
-    # Configuración de la ventana de Tkinter para mostrar el proceso en tiempo real
-    ventana_tk = tk.Tk()
-    ventana_tk.title("Valores del Camino Óptimo")
-    ventana_tk.geometry("300x600")
-
-    # Lista para nodos explorados
-    scrollbar = tk.Scrollbar(ventana_tk)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    lista_abierta_tk = tk.Listbox(ventana_tk, yscrollcommand=scrollbar.set, font=("Arial", 10))
-    lista_abierta_tk.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    scrollbar.config(command=lista_abierta_tk.yview)
-
-    # Lista para nodos cerrados
-    lista_cerrada_tk = tk.Listbox(ventana_tk, yscrollcommand=scrollbar.set, font=("Arial", 10))
-    lista_cerrada_tk.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    
-    # Lista para el camino óptimo
-    lista_camino_tk = tk.Listbox(ventana_tk, font=("Arial", 10), fg="green")
-    lista_camino_tk.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-
-    # Ventana de Pygame
-    VENTANA = pygame.display.set_mode((ANCHO_VENTANA, ANCHO_VENTANA))
-    pygame.display.set_caption("Algoritmo A*")
-
-    for fila in grid:
-        for nodo in fila:
-            nodo.actualizar_vecinos(grid)
-
     corriendo = True
 
+    ventana_info = VentanaInformacion()
+
     while corriendo:
-        dibujar(VENTANA, grid, FILAS, ANCHO_VENTANA)
+        dibujar(ventana, grid, FILAS, ancho, fuente)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 corriendo = False
 
-            if pygame.mouse.get_pressed()[0]:  # Click izquierdo
+            if pygame.mouse.get_pressed()[0]:  # Botón izquierdo del mouse
                 pos = pygame.mouse.get_pos()
-                fila, col = obtener_click_pos(pos, FILAS, ANCHO_VENTANA)
+                fila, col = obtener_click_pos(pos, FILAS, ancho)
                 nodo = grid[fila][col]
-                if not inicio and nodo != fin:
+                if not inicio:
                     inicio = nodo
                     inicio.hacer_inicio()
-
-                elif not fin and nodo != inicio:
+                elif not fin:
                     fin = nodo
                     fin.hacer_fin()
-
-                elif nodo != fin and nodo != inicio:
+                else:
                     nodo.hacer_pared()
 
-            elif pygame.mouse.get_pressed()[2]:  # Click derecho
+            elif pygame.mouse.get_pressed()[2]:  # Botón derecho del mouse
                 pos = pygame.mouse.get_pos()
-                fila, col = obtener_click_pos(pos, FILAS, ANCHO_VENTANA)
+                fila, col = obtener_click_pos(pos, FILAS, ancho)
                 nodo = grid[fila][col]
                 nodo.restablecer()
                 if nodo == inicio:
@@ -286,15 +257,8 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and inicio and fin:
-                    for fila in grid:
-                        for nodo in fila:
-                            nodo.actualizar_vecinos(grid)
-
-                    a_star(lambda: dibujar(VENTANA, grid, FILAS, ANCHO_VENTANA), grid, inicio, fin, lista_abierta_tk, lista_cerrada_tk, lista_camino_tk)
-
-        ventana_tk.update()  # Actualizar la ventana de Tkinter en el bucle principal
+                    a_estrella(grid, inicio, fin, ventana, FILAS, ancho, fuente, ventana_info)
 
     pygame.quit()
-    ventana_tk.destroy()
 
-main()
+main(VENTANA, ANCHO_VENTANA)
