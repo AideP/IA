@@ -1,4 +1,3 @@
-# visualizador_a_estrella.py
 
 import pygame
 import heapq
