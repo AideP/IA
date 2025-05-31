@@ -51,8 +51,8 @@ nave_superior = pygame.Rect(30, 20, 64, 64)
 nave = pygame.Rect(w - 100, h - 100, 64, 64)
 
 # --- VELOCIDADES ---
-velocidad_bala = -50
-velocidad_bala_vertical = 3
+velocidad_bala = -6
+velocidad_bala_vertical = 6
 bala_disparada = False
 
 # --- ANIMACIÓN ---
@@ -120,7 +120,6 @@ def entrenar_modelos():
         modelo_salto_arbol = DecisionTreeClassifier().fit(X, y)
         modelo_salto_nn = MLPClassifier(max_iter=500).fit(X, y)
         modelo_salto_knn = KNeighborsClassifier(n_neighbors=3).fit(X, y)
-        print(f"\nModelos salto entrenados con {len(X)} muestras.")
     else:
         modelo_salto_arbol = None
         modelo_salto_nn = None
@@ -132,18 +131,14 @@ def entrenar_modelos():
         modelo_movimiento_arbol = DecisionTreeClassifier().fit(X_mov, y_mov)
         modelo_movimiento_nn = MLPClassifier(max_iter=500).fit(X_mov, y_mov)
         modelo_movimiento_knn = KNeighborsClassifier(n_neighbors=3).fit(X_mov, y_mov)
-        print(f"Modelos movimiento entrenados con {len(X_mov)} muestras.")
     else:
         modelo_movimiento_arbol = None
         modelo_movimiento_nn = None
         modelo_movimiento_knn = None
 
 def mostrar_datos_guardados():
-    print("\n--- DATOS DE SALTO ---")
+    print("\n--- DATOS ---")
     for d in datos_salto:
-        print(d)
-    print("--- DATOS DE MOVIMIENTO ---")
-    for d in datos_movimiento:
         print(d)
 
 def prediccion_salto():
