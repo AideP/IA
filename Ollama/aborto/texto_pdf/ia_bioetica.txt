@@ -1,0 +1,12 @@
+IA BIOÉTICA
+La aplicación de inteligencia artificial (IA) en la medicina plantea importantes retos bioéticos.
+En el contexto del aborto, la IA  puede intervenir en diagnóstico prenatal, predicción de enfermedades, e
+incluso en la asistencia para la toma de decisiones clínicas. Aunque estos avances pueden mejorar la
+precisión y la eficiencia, también surgen preocupaciones éticas:
+¿Quién es responsable si una decisión basada en IA  causa daño?
+¿Qué ocurre si los algoritmos tienen sesgos ocultos?
+¿Qué tan informada está una paciente al aceptar una recomendación de un sistema automatizado?
+Desde una perspectiva bioética, deben considerarse los principios de autonomía, beneficencia, no
+maleficencia y justicia. La IA  debe apoyar —y no sustituir— la capacidad humana de deliberar , decidir y
+cuidar . Especialmente en decisiones sensibles como el aborto, el juicio clínico humano y el
+consentimiento informado deben primar sobre la automatización.

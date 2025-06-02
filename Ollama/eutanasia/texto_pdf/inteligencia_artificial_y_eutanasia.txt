@@ -1,0 +1,13 @@
+INTELIGENCIA  ARTIFICIAL  Y EUT ANASIA
+El papel de la inteligencia artificial en decisiones sobre eutanasia
+La inteligencia artificial (IA) puede desempeñar un papel en el análisis de datos médicos para apoyar
+decisiones clínicas, pero su aplicación en contextos como la eutanasia es especialmente delicada.
+La IA  puede ayudar a identificar patrones, estimar el sufrimiento basado en síntomas clínicos o ayudar
+en la documentación de consentimiento informado. Sin embargo, estas herramientas no deben sustituir
+la evaluación ética y emocional del paciente ni del equipo médico.
+Uno de los principales problemas es que la IA  carece de empatía y comprensión del contexto humano.
+Además, puede tener sesgos derivados de los datos con los que fue entrenada, lo que puede generar
+evaluaciones injustas o imprecisas.
+En contextos de eutanasia, el juicio ético, la comunicación interpersonal y el respeto profundo a la
+voluntad del paciente no pueden ser reemplazados por algoritmos. La IA  puede ser un asistente
+valioso, pero nunca un decisor final en temas de vida o muerte.
