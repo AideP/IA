@@ -28,14 +28,14 @@ def generar_embedding(texto, intentos=3):
                 "http://localhost:11434/api/embeddings",
                 json={
                     "model": modelo_embeddings,
-                    "prompt": texto[:10000]  # 👈 CAMBIADO de 'text' a 'prompt'
+                    "prompt": texto[:10000]  
                 },
                 timeout=60
             )
 
             if response.status_code == 200:
                 data = response.json()
-                print("🔎 Respuesta cruda:", data)  # 👈 Opcional para depuración
+                print("🔎 Respuesta cruda:", data) 
                 embedding = data.get("embedding")
                 if embedding and len(embedding) > 0:
                     return embedding
@@ -47,7 +47,7 @@ def generar_embedding(texto, intentos=3):
         except Exception as e:
             print(f"🔴 Excepción al generar embedding: {str(e)}")
 
-        time.sleep(2)  # Espera antes de reintentar
+        time.sleep(2)
 
     return None
 
