@@ -128,3 +128,7 @@ python preguntar.py
 | Embeddings vacíos                  | Verifica que `nomic-embed-text` esté funcionando en Ollama.    |
 | No se encuentra modelo             | Ejecuta `ollama pull nomic-embed-text` o `llama3`              |
 | Archivos `.txt` vacíos             | Asegúrate de que los textos tengan contenido relevante.        |
+
+---
+
+## Video: [https://drive.google.com/file/d/1scelv79G8U83FGi0UTUqYZN_Bmvqgyes/view?usp=sharing](https://drive.google.com/file/d/1scelv79G8U83FGi0UTUqYZN_Bmvqgyes/view?usp=sharing)
